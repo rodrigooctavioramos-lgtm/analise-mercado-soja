@@ -133,53 +133,50 @@ def atualizar_cotacoes():
     except Exception as e:
         print(f"Erro ao calcular comparação de óleos: {e}")
 
-    # 3. Calculate weekly technical forecast (based on CBOT trend and BRL exchange)
+    # 3. Calculate weekly technical forecast (based on SOYBEAN OIL trend)
     try:
-        if "soja_grao" in novas_cotacoes and "dolar" in novas_cotacoes:
-            hist_grao = novas_cotacoes["soja_grao"]["history_6m"]
-            last_price = novas_cotacoes["soja_grao"]["price"]
-            last_dolar = novas_cotacoes["dolar"]["price"]
+        if "soja_oleo" in novas_cotacoes and "dolar" in novas_cotacoes:
+            hist_oleo = novas_cotacoes["soja_oleo"]["history_6m"]
+            last_price = novas_cotacoes["soja_oleo"]["price"]
             
-            # Calculate 5-day SMA
-            if len(hist_grao) >= 5:
-                closes_5d = [h["value"] for h in hist_grao[-5:]]
+            # Calculate 5-day SMA for Soybean Oil
+            if len(hist_oleo) >= 5:
+                closes_5d = [h["value"] for h in hist_oleo[-5:]]
                 sma_5d = sum(closes_5d) / 5
             else:
                 sma_5d = last_price
                 
             momentum = (last_price - sma_5d) / sma_5d * 100
             
-            # Simple technical rule
+            # Simple technical rule for Soybean Oil
             if last_price > sma_5d:
                 direction = "Alta"
-                probability = min(max(50 + momentum * 12, 55), 88)
+                probability = min(max(50 + momentum * 15, 55), 88)
                 range_min = last_price * 0.985
-                range_max = last_price * 1.035
-                commentary = "Mercado com momentum comprador na CBOT. O rompimento da média móvel curta indica suporte forte nos patamares atuais, impulsionado por previsões climáticas secas no Hemisfério Norte."
+                range_max = last_price * 1.025
+                commentary = "Mercado de óleo de soja demonstrando viés de alta na CBOT. O preço do óleo opera acima da média móvel curta, impulsionado pela forte demanda da indústria de biodiesel nacional e americana e a alta nos preços de energia (petróleo)."
             else:
                 direction = "Baixa"
-                probability = min(max(50 - momentum * 12, 55), 88)
-                range_min = last_price * 0.965
+                probability = min(max(50 - momentum * 15, 55), 88)
+                range_min = last_price * 0.975
                 range_max = last_price * 1.015
-                commentary = "Mercado sob pressão vendedora técnica na CBOT, operando abaixo da média de 5 dias. Chuvas favoráveis nas principais regiões produtoras limitam os ganhos e pesam sobre os contratos futuros."
+                commentary = "Mercado de óleo de soja sob pressão técnica na CBOT. O fechamento recente abaixo da média móvel de 5 dias é pressionado pelo ritmo forte de esmagamento nos EUA e pela ampla oferta da colheita sul-americana."
                 
-            # Paranaguá BRL Parity Range estimation
-            # FOB Paranaguá Bag Parity = ((CBOT + 80) / 100) * 2.20462 * Exchange
-            paridade_min = ((range_min + 80) / 100) * 2.20462 * last_dolar
-            paridade_max = ((range_max + 80) / 100) * 2.20462 * last_dolar
+            # Convert targets to USD / Tonelada
+            usd_ton_min = range_min * 22.0462
+            usd_ton_max = range_max * 22.0462
             
             CACHE_LOCK.acquire()
             try:
                 WEEKLY_FORECAST_CACHE.update({
                     "direction": direction,
                     "probability": round(probability, 1),
-                    "cbot_range_min": round(range_min, 2),
-                    "cbot_range_max": round(range_max, 2),
-                    "parity_range_min": round(paridade_min, 2),
-                    "parity_range_max": round(paridade_max, 2),
+                    "cbot_oil_range_min": round(range_min, 2),
+                    "cbot_oil_range_max": round(range_max, 2),
+                    "usd_ton_range_min": round(usd_ton_min, 2),
+                    "usd_ton_range_max": round(usd_ton_max, 2),
                     "commentary": commentary,
-                    "last_cbot": last_price,
-                    "last_dolar": last_dolar,
+                    "last_oleo": last_price,
                     "calculated_at": datetime.now().strftime("%d/%m/%Y %H:%M")
                 })
             finally:
@@ -212,7 +209,7 @@ def atualizar_cotacoes():
                     "high": b3_calc_bag_brl * 1.01,
                     "low": b3_calc_bag_brl * 0.99,
                     "volume": 12450.0,
-                    "history_6m": [{"date": h["date"], "value": ((h["value"] + 80) / 100 * 2.20462 * usd_brl)} for h in hist_grao]
+                    "history_6m": [{"date": h["date"], "value": ((h["value"] + 80) / 100 * 2.20462 * usd_brl)} for h in novas_cotacoes["soja_grao"]["history_6m"]]
                 }
                 
             QUOTES_CACHE.update(novas_cotacoes)
@@ -223,14 +220,13 @@ def atualizar_cotacoes():
 def start_background_updater():
     """Starts a daemon thread to update quotes every 15 seconds (shortest safe interval)."""
     def run_updater():
-        # Run first time instantly
         try:
             atualizar_cotacoes()
         except Exception as e:
             print(f"Erro no updater de background inicial: {e}")
             
         while True:
-            time.sleep(15) # Poll every 15 seconds (instead of 3 mins)
+            time.sleep(15)
             try:
                 atualizar_cotacoes()
             except Exception as e:
@@ -257,20 +253,64 @@ HISTORICAL_DATA = {
                 "ano_anterior_ytd": 40.8,
                 "ano_corrente_ytd": 42.5,
                 "ano_corrente_projecao": 106.8,
-                "ytd_variacao": 4.17,      # (42.5 - 40.8) / 40.8 * 100
-                "total_variacao": 3.49     # (106.8 - 103.2) / 103.2 * 100
+                "ytd_variacao": 4.17,
+                "total_variacao": 3.49
             },
             "soja_oleo": {
                 "ano_anterior_total": 1.82,
                 "ano_anterior_ytd": 0.62,
                 "ano_corrente_ytd": 0.68,
                 "ano_corrente_projecao": 1.94,
-                "ytd_variacao": 9.68,      # (0.68 - 0.62) / 0.62 * 100
-                "total_variacao": 6.59     # (1.94 - 1.82) / 1.82 * 100
+                "ytd_variacao": 9.68,
+                "total_variacao": 6.59
             }
         }
     }
 }
+
+# Current Industry News database
+NEWS_DATABASE = [
+    {
+        "id": 1,
+        "titulo": "Produção de Biodiesel no Brasil atinge recorde histórico no acumulado de 2026",
+        "fonte": "SCA Brasil / Notícias Agrícolas",
+        "data": "08/06/2026",
+        "categoria": "BIODIESEL",
+        "resumo": "A produção brasileira de biodiesel registrou o maior volume histórico para o primeiro quadrimestre do ano, atingindo 3,25 milhões de m³ (+9,87% em relação a 2025). O óleo de soja consolida-se como a principal matéria-prima, ampliando sua participação na matriz nacional para 75,6%."
+    },
+    {
+        "id": 2,
+        "titulo": "Vazio sanitário da soja inicia em Mato Grosso visando a proteção da safra 2026/27",
+        "fonte": "Canal Rural",
+        "data": "05/06/2026",
+        "categoria": "CLIMA & SAFRA",
+        "resumo": "O vazio sanitário de 90 dias teve início no estado de Mato Grosso. A medida, que proíbe manter plantas vivas de soja nas lavouras, é crucial para prevenir a multiplicação do fungo da ferrugem asiática durante o ciclo de entressafra e preparar as lavouras para o plantio em setembro."
+    },
+    {
+        "id": 3,
+        "titulo": "Oscilação cambial e prêmios nos portos sustentam o preço físico da soja no Brasil",
+        "fonte": "Globo Rural",
+        "data": "09/06/2026",
+        "categoria": "MERCADO FÍSICO",
+        "resumo": "Apesar do clima favorável apontar para uma grande colheita nos EUA e pressionar a bolsa de Chicago (CME), a alta pontual do dólar frente ao real e os prêmios portuários positivos têm atuado como forte colchão de proteção para o mercado físico nacional de soja."
+    },
+    {
+        "id": 4,
+        "titulo": "Indonésia adota restrições nas exportações de óleo de palma para priorizar mercado interno de B50",
+        "fonte": "Bloomberg Linea",
+        "data": "07/06/2026",
+        "categoria": "ÓLEOS VEGETAIS",
+        "resumo": "O maior exportador global de óleo de palma centralizou a fiscalização das remessas no exterior para assegurar estoques internos e dar suporte ao programa nacional de biocombustível B50. A restrição afeta os fluxos globais e redireciona importadores asiáticos (como a Índia) para o óleo de soja."
+    },
+    {
+        "id": 5,
+        "titulo": "Políticas ambientais americanas e lei do Combustível do Futuro abrem debate sobre esmagamento",
+        "fonte": "Notícias Agrícolas",
+        "data": "04/06/2026",
+        "categoria": "TENDÊNCIAS",
+        "resumo": "Investimentos bilionários na capacidade de esmagamento de soja nos EUA e a tramitação final da regulação da lei 'Combustível do Futuro' no Brasil mantêm o setor otimista quanto à demanda estrutural de óleo de soja de longo prazo, transformando a oleaginosa em commodity energética."
+    }
+]
 
 @app.route("/")
 def index():
@@ -308,6 +348,10 @@ def get_forecast():
     if not WEEKLY_FORECAST_CACHE:
         atualizar_cotacoes()
     return jsonify(WEEKLY_FORECAST_CACHE)
+
+@app.route("/api/news")
+def get_news():
+    return jsonify(NEWS_DATABASE)
 
 @app.route("/api/crops")
 def get_crops():

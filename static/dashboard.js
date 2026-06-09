@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadExports();
     loadForecast();
     loadOilComparison();
+    loadNews();
 
     // 3. Setup Calculator Events
     setupCalculator();
@@ -347,6 +348,7 @@ function prefillCalculator() {
     calculateParity();
 }
 
+// Estimated Parity at Paranaguá FOB
 function calculateParity() {
     const cbotVal = parseFloat(document.getElementById("calc-cbot").value) || 0;
     const premiumVal = parseFloat(document.getElementById("calc-premium").value) || 0;
@@ -377,6 +379,7 @@ async function forceReloadQuotes() {
         await loadQuotes();
         await loadForecast();
         await loadOilComparison();
+        await loadNews();
     } catch(e) {
         console.error("Erro ao recarregar:", e);
     } finally {
@@ -597,7 +600,7 @@ function renderExportsCharts(data) {
     }
 }
 
-// Fetch Weekly Technical Forecast
+// Fetch Weekly Technical Forecast (revised for Soybean Oil focus)
 async function loadForecast() {
     try {
         const response = await fetch("/api/forecast");
@@ -625,11 +628,16 @@ function updateForecastUI(data) {
     trendElem.textContent = `Tendência: ${data.direction}`;
     trendElem.className = `forecast-badge ${isUp ? 'alta' : 'baixa'}`;
     
-    // Confidence and ranges
+    // Confidence and ranges (Soybean Oil focused)
     probElem.textContent = `${data.probability}%`;
     probElem.style.color = isUp ? "var(--accent-green)" : "var(--accent-red)";
-    cbotElem.textContent = `${data.cbot_range_min.toFixed(2)} - ${data.cbot_range_max.toFixed(2)} ¢/bu`;
-    parityElem.textContent = `R$ ${data.parity_range_min.toFixed(2)} - R$ ${data.parity_range_max.toFixed(2)}`;
+    
+    // CBOT Oil is in cents/lb
+    cbotElem.textContent = `${data.cbot_oil_range_min.toFixed(2)} - ${data.cbot_oil_range_max.toFixed(2)} ¢/lb`;
+    
+    // USD / Tonelada range
+    parityElem.textContent = `$ ${data.usd_ton_range_min.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} - $ ${data.usd_ton_range_max.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} / t`;
+    
     rationaleElem.textContent = data.commentary;
     timeElem.textContent = `Atualizado em: ${data.calculated_at}`;
 }
@@ -764,6 +772,42 @@ function renderOilComparisonChart(data) {
             }
         });
     }
+}
+
+// Fetch and Populate News Articles
+async function loadNews() {
+    try {
+        const response = await fetch("/api/news");
+        if (!response.ok) throw new Error("Erro ao carregar notícias");
+        const noticias = await response.json();
+        
+        populateNewsUI(noticias);
+    } catch(e) {
+        console.error("Erro ao carregar notícias do setor:", e);
+    }
+}
+
+function populateNewsUI(noticias) {
+    const feed = document.getElementById("news-grid-feed");
+    if (!feed) return;
+
+    let html = "";
+    noticias.forEach(n => {
+        html += `
+            <div class="news-card card-12">
+                <div class="news-meta">
+                    <span class="news-category-badge">${n.categoria}</span>
+                    <span class="news-date">${n.data}</span>
+                </div>
+                <h3 class="news-title">${n.titulo}</h3>
+                <p class="news-summary">${n.resumo}</p>
+                <div class="news-source">
+                    <i class="fa-solid fa-square-rss"></i> Fonte: ${n.fonte}
+                </div>
+            </div>
+        `;
+    });
+    feed.innerHTML = html;
 }
 
 // Weather Maps Switch Focus
