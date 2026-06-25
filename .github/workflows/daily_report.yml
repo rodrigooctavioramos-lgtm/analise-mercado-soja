@@ -28,12 +28,12 @@ jobs:
 
     - name: Generate and Send Daily Report
       env:
-        # SMTP Credentials from GitHub Secrets
-        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+        # SMTP Credentials (sender email is public, password is a GitHub Secret)
+        SENDER_EMAIL: "rodrigooctavioramos@gmail.com"
         SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
-        # Recipient overrides (optional fallback built into the script)
-        RECIPIENT_SIMONE: ${{ secrets.RECIPIENT_SIMONE }}
-        RECIPIENT_ALDENOR: ${{ secrets.RECIPIENT_ALDENOR }}
-        RECIPIENT_RODRIGO: ${{ secrets.RECIPIENT_RODRIGO }}
+        # Recipient email configurations
+        RECIPIENT_SIMONE: "simone.santos@agrofoods.ind.br"
+        RECIPIENT_ALDENOR: "aldenor.filho@agrofoods.ind.br"
+        RECIPIENT_RODRIGO: "rodrigooctavioramos@gmail.com"
       run: |
         python agendador_diario_soja.py --now

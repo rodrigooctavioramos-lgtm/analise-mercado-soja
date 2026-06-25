@@ -17,20 +17,20 @@ from gerar_pdf_soja import gerar_pdf_diario, fetch_quotes
 def ler_config_email():
     """Reads email configuration from env vars, local config file or fallback."""
     # Prioritize environment variables (useful for GitHub Actions / cloud deployment)
-    env_sender = os.environ.get("SENDER_EMAIL")
+    env_sender = os.environ.get("SENDER_EMAIL") or "rodrigooctavioramos@gmail.com"
     env_password = os.environ.get("SENDER_PASSWORD")
     
-    if env_sender and env_password:
-        dest_simone = os.environ.get("RECIPIENT_SIMONE", "simone.santos@agrofoods.ind.br")
-        dest_aldenor = os.environ.get("RECIPIENT_ALDENOR", "aldenor.filho@agrofoods.ind.br")
-        dest_rodrigo = os.environ.get("RECIPIENT_RODRIGO", "rodrigooctavioramos@gmail.com")
+    if env_password:
+        dest_simone = os.environ.get("RECIPIENT_SIMONE") or "simone.santos@agrofoods.ind.br"
+        dest_aldenor = os.environ.get("RECIPIENT_ALDENOR") or "aldenor.filho@agrofoods.ind.br"
+        dest_rodrigo = os.environ.get("RECIPIENT_RODRIGO") or "rodrigooctavioramos@gmail.com"
         
         return {
-            "smtp_server": os.environ.get("SMTP_SERVER", "smtp.gmail.com"),
-            "smtp_port": int(os.environ.get("SMTP_PORT", 587)),
+            "smtp_server": os.environ.get("SMTP_SERVER") or "smtp.gmail.com",
+            "smtp_port": int(os.environ.get("SMTP_PORT") or 587),
             "sender_email": env_sender,
             "sender_password": env_password,
-            "use_tls": os.environ.get("USE_TLS", "true").lower() == "true",
+            "use_tls": (os.environ.get("USE_TLS") or "true").lower() == "true",
             "destinatarios": {
                 "3100 - SIMONE MONTEIRO DOS SANTOS": dest_simone,
                 "3300 - ALDENOR OLIVEIRA": dest_aldenor,
