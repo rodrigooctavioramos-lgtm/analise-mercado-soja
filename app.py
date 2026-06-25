@@ -309,6 +309,14 @@ NEWS_DATABASE = [
         "data": "04/06/2026",
         "categoria": "TENDÊNCIAS",
         "resumo": "Investimentos bilionários na capacidade de esmagamento de soja nos EUA e a tramitação final da regulação da lei 'Combustível do Futuro' no Brasil mantêm o setor otimista quanto à demanda estrutural de óleo de soja de longo prazo, transformando a oleaginosa em commodity energética."
+    },
+    {
+        "id": 6,
+        "titulo": "Mercado Global de Petróleo: Oscilação do Brent e reflexos no complexo de soja e biocombustíveis",
+        "fonte": "Reuters / Bloomberg",
+        "data": "10/06/2026",
+        "categoria": "ENERGIA",
+        "resumo": "A firmeza dos preços da energia (Brent e WTI) devido a tensões geopolíticas globais e cortes de oferta da OPEP+ continua a sustentar as margens de biodiesel nos EUA e na Europa, impulsionando a demanda industrial e as cotações de óleo de soja na CBOT."
     }
 ]
 
@@ -366,10 +374,76 @@ def force_reload():
     atualizar_cotacoes()
     return jsonify({"status": "sucesso", "mensagem": "Cotações recarregadas sob demanda."})
 
+@app.route("/api/diario-pdf")
+def download_diario():
+    """Route to generate and download the daily Soybean Market Intelligence PDF."""
+    from gerar_pdf_soja import gerar_pdf_diario
+    from flask import send_file
+    
+    # Path of the generated PDF
+    pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dados', 'relatorios', 'diario_soja.pdf')
+    
+    try:
+        # Generate fresh PDF
+        gerar_pdf_diario(pdf_path)
+        
+        if os.path.exists(pdf_path):
+            return send_file(
+                pdf_path,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=f"AGROFOODS_DAILY_MARKET_INTELLIGENCE_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+            )
+        else:
+            return jsonify({"erro": "O arquivo PDF não pôde ser gerado."}), 500
+    except Exception as e:
+        return jsonify({"erro": f"Erro interno ao gerar o PDF: {str(e)}"}), 500
+
+@app.route("/api/enviar-diario")
+def trigger_enviar_diario():
+    """Manual trigger to execute the daily mailing/mock mailing workflow."""
+    from agendador_diario_soja import executar_agendamento_diario
+    try:
+        executar_agendamento_diario()
+        return jsonify({"status": "sucesso", "mensagem": "Automação diária executada com sucesso!"})
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+def start_background_pdf_scheduler():
+    """Starts a thread to check and run the daily report mailing at 08:00 AM."""
+    from agendador_diario_soja import executar_agendamento_diario
+    
+    def pdf_scheduler_loop():
+        # Wait for yfinance cache to populate first
+        time.sleep(10)
+        ja_enviado_hoje = False
+        print("Iniciando agendador diário de mercado de Soja (08:00 AM)...")
+        
+        while True:
+            agora = datetime.now()
+            hora_atual = agora.strftime("%H:%M")
+            
+            if hora_atual == "08:00" and not ja_enviado_hoje:
+                try:
+                    executar_agendamento_diario()
+                except Exception as e:
+                    print(f"Erro no agendador de background do PDF: {e}")
+                ja_enviado_hoje = True
+            elif hora_atual != "08:00":
+                ja_enviado_hoje = False
+                
+            time.sleep(30) # check every 30 seconds
+            
+    scheduler_thread = threading.Thread(target=pdf_scheduler_loop, daemon=True)
+    scheduler_thread.start()
+
 if __name__ == "__main__":
     # Ensure folder relatórios exist
     os.makedirs(os.path.join(os.path.dirname(__file__), "dados", "relatorios"), exist_ok=True)
     # Start background updater
     start_background_updater()
+    # Start background PDF scheduler
+    start_background_pdf_scheduler()
     # Start app on port 5006
     app.run(host="0.0.0.0", port=5006, debug=True)
+

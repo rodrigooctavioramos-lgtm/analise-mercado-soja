@@ -232,8 +232,9 @@
                         <h1>Terminal de Cotações</h1>
                         <p>Futuros da Chicago Board of Trade (CBOT), Mercado Físico B3, Ações e Câmbio USD/BRL em tempo real.</p>
                     </div>
-                    <div class="header-actions">
+                    <div class="header-actions" style="display: flex; gap: 8px;">
                         <button class="btn-secondary" onclick="forceReloadQuotes()"><i class="fa-solid fa-rotate"></i> Atualizar Agora</button>
+                        <button class="btn-secondary" onclick="window.open('/api/diario-pdf', '_blank')"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Baixar PDF Diário</button>
                     </div>
                 </div>
 
