@@ -436,10 +436,11 @@ def gerar_pdf_diario(dest_path=None):
     story.append(Paragraph("RADAR DE NOTÍCIAS DO SETOR & DIREÇÃO DO CAMPO", section_title_style))
     
     brent_price = quotes.get("petroleo_brent", {}).get("price", 82.0)
+    usd_price = quotes.get("dolar", {}).get("price", 5.00)
     news_items = [
-        ("Produção de Biodiesel no Brasil atinge recorde histórico no acumulado de 2026", "A produção brasileira cresceu +9,87% YTD, impulsionando o consumo interno de óleo de soja bruto. A demanda de energia mantém piso forte para óleo físico."),
-        ("Indonésia restringe exportações de palma visando mercado de biocombustíveis interno (B50)", "A decisão afeta a oferta global de óleos vegetais concorrentes e direciona a demanda indiana e chinesa para o óleo de soja, gerando suporte em Chicago."),
-        (f"Mercado Global de Petróleo: Brent cotado a USD {brent_price:.1f}/barril e impactos no complexo de soja", "A flutuação dos preços da energia (Brent e WTI) influencia a competitividade do biodiesel nos EUA e Europa, afetando a demanda e as cotações de óleo de soja na CBOT.")
+        ("Mandato de Biodiesel & Petróleo: Sustentação de Demanda por Óleo de Soja", f"Com o petróleo Brent cotado a USD {brent_price:.1f}/barril, a viabilidade do biodiesel se mantém elevada. O óleo de soja, principal insumo nacional, ganha suporte direto do mercado internacional de energia."),
+        (f"Câmbio & Competitividade: Dólar a R$ {usd_price:.2f} atua como Amortecedor Cambial", "A moeda americana valorizada compensa flutuações intradiárias da soja em grão na CBOT, mantendo firmes as margens de esmagamento e os preços da saca no mercado físico interno."),
+        ("Arbitragem Global de Óleos: Custos de frete e refino doméstico de soja", "A combinação de dólar firme e frete logístico pressionado eleva a competitividade do esmagamento local de soja, limitando o espaço para óleos concorrentes importados no refino.")
     ]
     
     news_story = []

@@ -272,11 +272,11 @@ HISTORICAL_DATA = {
 NEWS_DATABASE = [
     {
         "id": 1,
-        "titulo": "Produção de Biodiesel no Brasil atinge recorde histórico no acumulado de 2026",
+        "titulo": "Mandato de Biodiesel & Petróleo: Sustentação de Demanda por Óleo de Soja",
         "fonte": "SCA Brasil / Notícias Agrícolas",
-        "data": "08/06/2026",
+        "data": "15/06/2026",
         "categoria": "BIODIESEL",
-        "resumo": "A produção brasileira de biodiesel registrou o maior volume histórico para o primeiro quadrimestre do ano, atingindo 3,25 milhões de m³ (+9,87% em relação a 2025). O óleo de soja consolida-se como a principal matéria-prima, ampliando sua participação na matriz nacional para 75,6%."
+        "resumo": "A valorização do petróleo internacional (Brent e WTI) sustenta as margens de biocombustíveis nos EUA e Europa. No Brasil, o avanço da mistura B15/B16 mantém o óleo de soja como ativo altamente estratégico e demandado pela matriz energética."
     },
     {
         "id": 2,
@@ -288,27 +288,27 @@ NEWS_DATABASE = [
     },
     {
         "id": 3,
-        "titulo": "Oscilação cambial e prêmios nos portos sustentam o preço físico da soja no Brasil",
+        "titulo": "Câmbio & Competitividade: Valorização do Dólar atua como amortecedor cambial no porto",
         "fonte": "Globo Rural",
-        "data": "09/06/2026",
+        "data": "18/06/2026",
         "categoria": "MERCADO FÍSICO",
-        "resumo": "Apesar do clima favorável apontar para uma grande colheita nos EUA e pressionar a bolsa de Chicago (CME), a alta pontual do dólar frente ao real e os prêmios portuários positivos têm atuado como forte colchão de proteção para o mercado físico nacional de soja."
+        "resumo": "Mesmo diante de realizações intradiárias da soja em grão na CBOT (Chicago), o dólar comercial sustentado atua como um colchão de proteção para o mercado físico nacional, mantendo estáveis e atrativos os preços da saca FOB em reais."
     },
     {
         "id": 4,
-        "titulo": "Indonésia adota restrições nas exportações de óleo de palma para priorizar mercado interno de B50",
+        "titulo": "Arbitragem de Importação de Óleos: Dólar alto e frete logístico barram palma concorrente",
         "fonte": "Bloomberg Linea",
-        "data": "07/06/2026",
+        "data": "12/06/2026",
         "categoria": "ÓLEOS VEGETAIS",
-        "resumo": "O maior exportador global de óleo de palma centralizou a fiscalização das remessas no exterior para assegurar estoques internos e dar suporte ao programa nacional de biocombustível B50. A restrição afeta os fluxos globais e redireciona importadores asiáticos (como a Índia) para o óleo de soja."
+        "resumo": "A combinação do dólar firme com custos logísticos e de frete pressionados diminui o apetite pela importação de palma da Indonésia/Malásia, gerando suporte doméstico direto para o refino nacional de óleo de soja bruto."
     },
     {
         "id": 5,
-        "titulo": "Políticas ambientais americanas e lei do Combustível do Futuro abrem debate sobre esmagamento",
+        "titulo": "Políticas ambientais e lei do Combustível do Futuro abrem debate sobre esmagamento nacional",
         "fonte": "Notícias Agrícolas",
         "data": "04/06/2026",
         "categoria": "TENDÊNCIAS",
-        "resumo": "Investimentos bilionários na capacidade de esmagamento de soja nos EUA e a tramitação final da regulação da lei 'Combustível do Futuro' no Brasil mantêm o setor otimista quanto à demanda estrutural de óleo de soja de longo prazo, transformando a oleaginosa em commodity energética."
+        "resumo": "Investimentos na capacidade de esmagamento de soja no Brasil e a regulação final do programa nacional 'Combustível do Futuro' aceleram a demanda estrutural de óleo de soja de longo prazo, transformando a oleaginosa em uma commodity essencial de transição energética."
     },
     {
         "id": 6,
@@ -316,7 +316,7 @@ NEWS_DATABASE = [
         "fonte": "Reuters / Bloomberg",
         "data": "10/06/2026",
         "categoria": "ENERGIA",
-        "resumo": "A firmeza dos preços da energia (Brent e WTI) devido a tensões geopolíticas globais e cortes de oferta da OPEP+ continua a sustentar as margens de biodiesel nos EUA e na Europa, impulsionando a demanda industrial e as cotações de óleo de soja na CBOT."
+        "resumo": "A oscilação do barril de petróleo afeta diretamente a paridade de preços do óleo de soja nos mercados americano (CBOT) e europeu, ditando o ritmo de competitividade do refino para fins industriais e de energia."
     }
 ]
 
