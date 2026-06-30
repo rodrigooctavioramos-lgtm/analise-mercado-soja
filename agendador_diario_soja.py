@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import datetime
+import pytz
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -83,11 +84,12 @@ def enviar_email_diario(pdf_path, config):
         "sua-senha" in sender_password
     )
     
-    assunto = f"DIÁRIO DE MERCADO AGROFOODS - SOJA & ENERGIA - {datetime.datetime.now().strftime('%d/%m/%Y')}"
+    now_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
+    assunto = f"DIÁRIO DE MERCADO AGROFOODS - SOJA & ENERGIA - {now_br.strftime('%d/%m/%Y')}"
     
     corpo = f"""Olá Equipe de Vendas Food Service,
 
-Segue em anexo o **Diário de Mercado Agrofoods | Soja, Óleos & Energia** de hoje, {datetime.datetime.now().strftime('%d/%m/%Y')}.
+Segue em anexo o **Diário de Mercado Agrofoods | Soja, Óleos & Energia** de hoje, {now_br.strftime('%d/%m/%Y')}.
 
 Neste informe você encontrará:
 1. Cotações atualizadas: Óleo de Soja CBOT, Soja Grão, Dólar, Petróleo WTI e Brent.
@@ -162,12 +164,13 @@ Rodrigo Ramos | Head Comercial Food Service
         return False
 
 def executar_agendamento_diario():
-    print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Iniciando automação Diário de Mercado Soja...")
+    now_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
+    print(f"\n[{now_br.strftime('%Y-%m-%d %H:%M:%S')}] Iniciando automação Diário de Mercado Soja...")
     config = ler_config_email()
     
     # 1. Generate PDF
     # Save a dated version in the archive
-    today_str = datetime.datetime.now().strftime('%Y-%m-%d')
+    today_str = now_br.strftime('%Y-%m-%d')
     archive_pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dados', 'relatorios', f"diario_soja_{today_str}.pdf")
     
     # Generate main PDF
@@ -187,7 +190,8 @@ def executar_agendamento_diario():
     else:
         print("Erro: Diário de Mercado em PDF não pôde ser gerado.")
         
-    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Automação Diário de Mercado concluída!")
+    now_br_end = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
+    print(f"[{now_br_end.strftime('%Y-%m-%d %H:%M:%S')}] Automação Diário de Mercado concluída!")
 
 if __name__ == "__main__":
     import argparse
@@ -204,7 +208,7 @@ if __name__ == "__main__":
         ja_enviado_hoje = False
         
         while True:
-            agora = datetime.datetime.now()
+            agora = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
             hora_atual = agora.strftime("%H:%M")
             
             # Execute daily at 08:00 AM

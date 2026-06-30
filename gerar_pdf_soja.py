@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import pytz
 import yfinance as yf
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
@@ -261,10 +262,11 @@ def gerar_pdf_diario(dest_path=None):
     story = []
     
     # 1. HEADER BANNER
+    now_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
     header_data = [
         [
             Paragraph("AGROFOODS COMERCIAL", title_style),
-            Paragraph(f"<b>DATA-BASE:</b> {datetime.datetime.now().strftime('%d/%m/%Y')} | <b>HORA:</b> {datetime.datetime.now().strftime('%H:%M')}", subtitle_style)
+            Paragraph(f"<b>DATA-BASE:</b> {now_br.strftime('%d/%m/%Y')} | <b>HORA:</b> {now_br.strftime('%H:%M')}", subtitle_style)
         ],
         [
             Paragraph("DIÁRIO DE MERCADO | SOJA, ÓLEOS & ENERGIA", subtitle_style),

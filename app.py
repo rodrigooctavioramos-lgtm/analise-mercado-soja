@@ -3,6 +3,7 @@ import json
 import threading
 import time
 from datetime import datetime, timedelta
+import pytz
 from flask import Flask, jsonify, render_template, request
 import pandas as pd
 import yfinance as yf
@@ -177,7 +178,7 @@ def atualizar_cotacoes():
                     "usd_ton_range_max": round(usd_ton_max, 2),
                     "commentary": commentary,
                     "last_oleo": last_price,
-                    "calculated_at": datetime.now().strftime("%d/%m/%Y %H:%M")
+                    "calculated_at": datetime.now(pytz.timezone('America/Sao_Paulo')).strftime("%d/%m/%Y %H:%M")
                 })
             finally:
                 CACHE_LOCK.release()
@@ -213,7 +214,7 @@ def atualizar_cotacoes():
                 }
                 
             QUOTES_CACHE.update(novas_cotacoes)
-            LAST_UPDATE = datetime.now()
+            LAST_UPDATE = datetime.now(pytz.timezone('America/Sao_Paulo'))
         finally:
             CACHE_LOCK.release()
 
@@ -392,7 +393,7 @@ def download_diario():
                 pdf_path,
                 mimetype='application/pdf',
                 as_attachment=True,
-                download_name=f"AGROFOODS_DAILY_MARKET_INTELLIGENCE_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+                download_name=f"AGROFOODS_DAILY_MARKET_INTELLIGENCE_{datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%Y-%m-%d')}.pdf"
             )
         else:
             return jsonify({"erro": "O arquivo PDF não pôde ser gerado."}), 500
@@ -420,7 +421,7 @@ def start_background_pdf_scheduler():
         print("Iniciando agendador diário de mercado de Soja (08:00 AM)...")
         
         while True:
-            agora = datetime.now()
+            agora = datetime.now(pytz.timezone('America/Sao_Paulo'))
             hora_atual = agora.strftime("%H:%M")
             
             if hora_atual == "08:00" and not ja_enviado_hoje:
