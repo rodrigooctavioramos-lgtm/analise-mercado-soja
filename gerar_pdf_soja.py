@@ -99,6 +99,7 @@ def fetch_quotes():
                 else:
                     trend = "Estável"
                 
+                print(f"Fetched {symbol} ({key}): price={price:.4f}, change={change:.4f}, pct_change={pct_change:.2f}%, last_date={hist.index[-1].strftime('%Y-%m-%d')}")
                 data[key] = {
                     "symbol": symbol,
                     "price": price,
@@ -109,6 +110,7 @@ def fetch_quotes():
                     "trend": trend
                 }
             else:
+                print(f"Empty history for {symbol} ({key}). Using fallback.")
                 data[key] = get_fallback_quote(key)
         except Exception as e:
             print(f"Error fetching {symbol}: {e}. Using fallback.")
