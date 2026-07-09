@@ -3,6 +3,8 @@ import sys
 import datetime
 import pytz
 import yfinance as yf
+import urllib.request
+from bs4 import BeautifulSoup
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether
@@ -63,8 +65,57 @@ class NumberedCanvas(canvas.Canvas):
         self.drawRightString(A4[0] - 36, 30, f"Página {self._pageNumber} de {page_count}")
         self.restoreState()
 
+def fetch_noticias_agricolas():
+    """Scrapes the latest news articles from Noticias Agricolas Soybean section."""
+    url = 'https://www.noticiasagricolas.com.br/noticias/soja/'
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    news = []
+    try:
+        print("Scraping live agricultural news from Noticias Agricolas...")
+        with urllib.request.urlopen(req) as r:
+            html = r.read()
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        links = []
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            if href and ('/noticias/soja/' in href) and href.endswith('.html'):
+                full_url = f"https://www.noticiasagricolas.com.br{href}"
+                if full_url not in [l[0] for l in links]:
+                    h2 = link.find('h2')
+                    title = h2.text.strip() if h2 else link.text.strip()
+                    if '\n' in title:
+                        title = title.split('\n')[-1].strip()
+                    if len(title) > 20:
+                        links.append((full_url, title))
+                        if len(links) >= 3:
+                            break
+                            
+        for full_url, title in links:
+            art_req = urllib.request.Request(full_url, headers={'User-Agent': 'Mozilla/5.0'})
+            try:
+                with urllib.request.urlopen(art_req) as art_r:
+                    art_html = art_r.read()
+                art_soup = BeautifulSoup(art_html, 'html.parser')
+                desc = ""
+                for p in art_soup.find_all('p'):
+                    p_text = p.text.strip()
+                    if len(p_text) > 80 and not p_text.startswith("Se inscreva") and not p_text.startswith("Quer receber"):
+                        desc = p_text
+                        break
+                if desc:
+                    if len(desc) > 200:
+                        desc = desc[:197].strip() + "..."
+                    news.append((title, desc))
+            except Exception as e:
+                print(f"Error fetching article details for {full_url}: {e}")
+    except Exception as e:
+        print(f"Error scraping news index: {e}")
+        
+    return news
+
 def fetch_quotes():
-    """Fetches market quotes for the report."""
+    """Fetches market quotes for the report, using the last completed day's data."""
     tickers = {
         "soja_grao": "ZS=F",        # CBOT Soybean Grain Futures
         "soja_oleo": "ZL=F",        # CBOT Soybean Oil Futures
@@ -76,13 +127,29 @@ def fetch_quotes():
     data = {}
     print("Fetching live soybean and energy quotes...")
     
+    # Get current Brazil date to identify today's in-progress bar
+    tz = pytz.timezone('America/Sao_Paulo')
+    today_str = datetime.datetime.now(tz).strftime('%Y-%m-%d')
+    
     for key, symbol in tickers.items():
         try:
             ticker = yf.Ticker(symbol)
             hist = ticker.history(period="30d")
             if not hist.empty:
-                last_row = hist.iloc[-1]
-                prev_row = hist.iloc[-2] if len(hist) > 1 else last_row
+                # Find the last completed trading day
+                last_row_date = hist.index[-1].strftime('%Y-%m-%d')
+                if last_row_date >= today_str and len(hist) > 2:
+                    last_row = hist.iloc[-2]
+                    prev_row = hist.iloc[-3]
+                    date_used = hist.index[-2]
+                elif len(hist) > 1:
+                    last_row = hist.iloc[-1]
+                    prev_row = hist.iloc[-2]
+                    date_used = hist.index[-1]
+                else:
+                    last_row = hist.iloc[-1]
+                    prev_row = last_row
+                    date_used = hist.index[-1]
                 
                 price = float(last_row["Close"])
                 prev_price = float(prev_row["Close"])
@@ -99,7 +166,7 @@ def fetch_quotes():
                 else:
                     trend = "Estável"
                 
-                print(f"Fetched {symbol} ({key}): price={price:.4f}, change={change:.4f}, pct_change={pct_change:.2f}%, last_date={hist.index[-1].strftime('%Y-%m-%d')}")
+                print(f"Fetched {symbol} ({key}): price={price:.4f}, change={change:.4f}, pct_change={pct_change:.2f}%, last_date={date_used.strftime('%Y-%m-%d')}")
                 data[key] = {
                     "symbol": symbol,
                     "price": price,
@@ -107,7 +174,8 @@ def fetch_quotes():
                     "pct_change": pct_change,
                     "high": float(last_row["High"]),
                     "low": float(last_row["Low"]),
-                    "trend": trend
+                    "trend": trend,
+                    "date": date_used.strftime('%d/%m')
                 }
             else:
                 print(f"Empty history for {symbol} ({key}). Using fallback.")
@@ -138,7 +206,8 @@ def fetch_quotes():
             "price": b3_price,
             "change": b3_change,
             "pct_change": b3_pct,
-            "trend": data["soja_grao"].get("trend", "Alta")
+            "trend": data["soja_grao"].get("trend", "Alta"),
+            "date": data["soja_grao"].get("date", "")
         }
     
     # Calculate Soybean oil price in USD/ton: ZL=F (cents/lb) * 22.0462
@@ -341,10 +410,12 @@ def gerar_pdf_diario(dest_path=None):
             var_paragraph = Paragraph(f"<font color='{color_text}'><b>{arrow} {sign}{change_pct:.2f}%</b></font>", table_cell_center)
             
             dynamic_trend = q.get("trend", trend)
+            date_str = q.get("date", "")
+            ticker_display = f"{ticker_symbol}<br/><font size='5.5' color='#666'>Ref: {date_str}</font>" if date_str else ticker_symbol
             
             grid_rows.append([
                 Paragraph(f"<b>{label}</b>", table_cell_bold),
-                Paragraph(f"{ticker_symbol}", table_cell_center),
+                Paragraph(f"{ticker_display}", table_cell_center),
                 Paragraph(f"{price_str}", table_cell_center),
                 var_paragraph,
                 Paragraph(f"<b>{dynamic_trend}</b>", table_cell_center),
@@ -441,12 +512,16 @@ def gerar_pdf_diario(dest_path=None):
     
     brent_price = quotes.get("petroleo_brent", {}).get("price", 82.0)
     usd_price = quotes.get("dolar", {}).get("price", 5.00)
-    news_items = [
-        ("Mandato de Biodiesel & Petróleo: Sustentação de Demanda por Óleo de Soja", f"Com o petróleo Brent cotado a USD {brent_price:.1f}/barril, a viabilidade do biodiesel se mantém elevada. O óleo de soja, principal insumo nacional, ganha suporte direto do mercado internacional de energia."),
-        (f"Câmbio & Competitividade: Dólar a R$ {usd_price:.2f} atua como Amortecedor Cambial", "A moeda americana valorizada compensa flutuações intradiárias da soja em grão na CBOT, mantendo firmes as margens de esmagamento e os preços da saca no mercado físico interno."),
-        ("Arbitragem Global de Óleos: Custos de frete e refino doméstico de soja", "A combinação de dólar firme e frete logístico pressionado eleva a competitividade do esmagamento local de soja, limitando o espaço para óleos concorrentes importados no refino.")
-    ]
     
+    # Try fetching dynamic agricultural news, fallback to templates if empty
+    news_items = fetch_noticias_agricolas()
+    if not news_items:
+        news_items = [
+            ("Mandato de Biodiesel & Petróleo: Sustentação de Demanda por Óleo de Soja", f"Com o petróleo Brent cotado a USD {brent_price:.1f}/barril, a viabilidade do biodiesel se mantém elevada. O óleo de soja, principal insumo nacional, ganha suporte direto do mercado internacional de energia."),
+            (f"Câmbio & Competitividade: Dólar a R$ {usd_price:.2f} atua como Amortecedor Cambial", "A moeda americana valorizada compensa flutuações intradiárias da soja em grão na CBOT, mantendo firmes as margens de esmagamento e os preços da saca no mercado físico interno."),
+            ("Arbitragem Global de Óleos: Custos de frete e refino doméstico de soja", "A combinação de dólar firme e frete logístico pressionado eleva a competitividade do esmagamento local de soja, limitando o espaço para óleos concorrentes importados no refino.")
+        ]
+        
     news_story = []
     for title, desc in news_items:
         news_story.append(Paragraph(f"<b>{title}</b>", bold_body_style))
