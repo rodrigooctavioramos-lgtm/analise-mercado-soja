@@ -1,0 +1,25 @@
+{
+  "cepea_brasil": {
+    "label": "Óleo de soja bruto/degomado — SP (Cepea)",
+    "value": "N/D",
+    "as_of": "2026-07-15",
+    "source": "cepea.org.br"
+  },
+  "argentina_fob": {
+    "label": "Óleo/soja — FOB oficial ou FAS teórico (BCR)",
+    "value": "USD 1.178,80/t",
+    "as_of": "2026-07-13",
+    "source": "BCR Rosario"
+  },
+  "malaysia_palm": {
+    "label": "Palma — Bursa Malaysia, contrato mais líquido",
+    "value": "RM 4.569/t",
+    "change": "-0,09% no dia",
+    "as_of": "2026-07-15",
+    "source": "Trading Economics"
+  },
+  "headline_dia": {
+    "title": "Indonésia Lança Mandato B50 com Transição a partir de Julho de 2026",
+    "summary": "O governo da Indonésia iniciou formalmente o mandato do biodiesel B50 (50% de óleo de palma), estabelecendo uma transição de três meses para esgotar o B40. A medida visa aumentar a segurança energética e pressiona a oferta global de óleos vegetais concorrentes, como o óleo de soja."
+  }
+}

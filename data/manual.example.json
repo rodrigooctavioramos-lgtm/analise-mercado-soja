@@ -1,0 +1,25 @@
+{
+  "cepea_brasil": {
+    "label": "Óleo de soja bruto/degomado — SP (Cepea)",
+    "value": "R$ 6.953,38/t",
+    "as_of": "2026-03-24",
+    "source": "cepea.org.br"
+  },
+  "argentina_fob": {
+    "label": "Óleo/soja — FOB oficial ou FAS teórico (BCR)",
+    "value": "N/D",
+    "as_of": "N/D",
+    "source": "bcr.com.ar"
+  },
+  "malaysia_palm": {
+    "label": "Palma — Bursa Malaysia, contrato mais líquido",
+    "value": "RM 4.577/t",
+    "change": "+0,66% no dia",
+    "as_of": "2026-07-08",
+    "source": "Business Recorder / Palm Oil Magazine"
+  },
+  "headline_dia": {
+    "title": "N/D",
+    "summary": "N/D"
+  }
+}

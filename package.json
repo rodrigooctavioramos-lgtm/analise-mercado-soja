@@ -1,0 +1,18 @@
+{
+  "name": "radar-soja-agrofoods",
+  "version": "1.0.0",
+  "description": "Coleta diária de dados do mercado de óleo de soja (Chicago, Brasil, Argentina, Malásia) e envio de e-mail via SMTP",
+  "main": "fetch-data.js",
+  "scripts": {
+    "fetch": "node fetch-data.js",
+    "send": "node send-email.js",
+    "run-radar": "node fetch-data.js && node send-email.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.14"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

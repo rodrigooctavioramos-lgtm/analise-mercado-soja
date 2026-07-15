@@ -4,6 +4,7 @@ import datetime
 import pytz
 import yfinance as yf
 import urllib.request
+import json
 from bs4 import BeautifulSoup
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
@@ -114,13 +115,39 @@ def fetch_noticias_agricolas():
         
     return news
 
+def format_date_slash(date_str):
+    """Formats date strings (e.g. YYYY-MM-DD or Month DD, YYYY) to DD/MM."""
+    if not date_str or date_str == "N/D":
+        return ""
+    try:
+        if '-' in date_str:
+            parts = date_str.split('-')
+            if len(parts) == 3:
+                return f"{parts[2]}/{parts[1]}"
+        if ',' in date_str:
+            # Parse July 15, 2026 or similar
+            # Use a dictionary for English month parsing to avoid locale dependency
+            months = {
+                'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+                'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+            }
+            # Clean and split
+            cleaned = date_str.lower().replace(',', '').strip()
+            parts = cleaned.split()
+            if len(parts) >= 2:
+                month_name = parts[0]
+                day = int(parts[1])
+                month = months.get(month_name, 1)
+                return f"{day:02d}/{month:02d}"
+    except Exception as e:
+        print(f"Error formatting date {date_str}: {e}")
+    return date_str
+
 def fetch_quotes():
-    """Fetches market quotes for the report, using the last completed day's data."""
+    """Fetches market quotes for the report, using the last completed day's data and manual inputs."""
     tickers = {
-        "soja_grao": "ZS=F",        # CBOT Soybean Grain Futures
         "soja_oleo": "ZL=F",        # CBOT Soybean Oil Futures
         "dolar": "USDBRL=X",        # USD/BRL Exchange Rate
-        "petroleo_wti": "CL=F",     # WTI Crude Oil
         "petroleo_brent": "BZ=F",   # Brent Crude Oil
     }
     
@@ -172,8 +199,6 @@ def fetch_quotes():
                     "price": price,
                     "change": change,
                     "pct_change": pct_change,
-                    "high": float(last_row["High"]),
-                    "low": float(last_row["Low"]),
                     "trend": trend,
                     "date": date_used.strftime('%d/%m')
                 }
@@ -184,38 +209,92 @@ def fetch_quotes():
             print(f"Error fetching {symbol}: {e}. Using fallback.")
             data[key] = get_fallback_quote(key)
             
-    # Calculate B3 Soybean bag price: ((CBOT Soybean + 80 Premium) / 100) * 2.20462 * USD/BRL
-    if "soja_grao" in data and "dolar" in data:
-        cbot_grain = data["soja_grao"]["price"]
-        usd_brl = data["dolar"]["price"]
-        b3_price = ((cbot_grain + 80.0) / 100.0) * 2.20462 * usd_brl
-        
-        # Calculate exact B3 change
-        grain_change = data["soja_grao"]["change"]
-        usd_change = data["dolar"]["change"]
-        
-        cbot_prev = cbot_grain - grain_change
-        usd_prev = usd_brl - usd_change
-        
-        b3_prev = ((cbot_prev + 80.0) / 100.0) * 2.20462 * usd_prev
-        b3_change = b3_price - b3_prev
-        b3_pct = (b3_change / b3_prev) * 100 if b3_prev != 0 else 0
-        
-        data["soja_b3"] = {
-            "symbol": "SJC (Calc)",
-            "price": b3_price,
-            "change": b3_change,
-            "pct_change": b3_pct,
-            "trend": data["soja_grao"].get("trend", "Alta"),
-            "date": data["soja_grao"].get("date", "")
-        }
-    
     # Calculate Soybean oil price in USD/ton: ZL=F (cents/lb) * 22.0462
     if "soja_oleo" in data:
         cbot_oil_cents = data["soja_oleo"]["price"]
         oil_usd_ton = cbot_oil_cents * 22.0462
         data["soja_oleo"]["usd_ton"] = oil_usd_ton
         
+    # 2. Load manual inputs from data/manual.json
+    manual_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'manual.json')
+    manual_data = {}
+    if os.path.exists(manual_path):
+        try:
+            with open(manual_path, 'r', encoding='utf-8') as f:
+                manual_data = json.load(f)
+        except Exception as e:
+            print(f"Error loading manual.json: {e}")
+            
+    # Parse Cepea (SP)
+    cepea = manual_data.get("cepea_brasil", {})
+    data["cepea_sp"] = {
+        "symbol": "Cepea (SP)",
+        "price_str": cepea.get("value", "N/D"),
+        "date": format_date_slash(cepea.get("as_of", "")),
+        "pct_change": 0.0,
+        "trend": "Estável"
+    }
+    
+    # Parse Argentina FOB (BCR)
+    arg = manual_data.get("argentina_fob", {})
+    data["argentina_fob"] = {
+        "symbol": "Rosario (BCR)",
+        "price_str": arg.get("value", "N/D"),
+        "date": format_date_slash(arg.get("as_of", "")),
+        "pct_change": 0.0,
+        "trend": "Estável"
+    }
+    
+    # Parse Malaysia Palma (Bursa) - Try fetching automatically first
+    palm_auto = None
+    try:
+        import re
+        from curl_cffi import requests
+        url = 'https://tradingeconomics.com/commodity/palm-oil'
+        r = requests.get(url, impersonate='chrome', timeout=10)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.content, 'html.parser')
+            text = soup.get_text()
+            pattern = r"Palm Oil (fell|rose) to ([\d,]+) MYR/T on ([^,]+,\s*\d{4}),\s*(down|up)\s*([\d\.]+)%"
+            match = re.search(pattern, text)
+            if match:
+                direction = match.group(1)
+                price = match.group(2)
+                date_str = match.group(3)
+                change_type = match.group(4)
+                change_val = match.group(5)
+                
+                change_pct_palm = float(change_val) if direction == "rose" else -float(change_val)
+                
+                palm_auto = {
+                    "symbol": "Bursa Malaysia",
+                    "price_str": f"RM {price}/t",
+                    "date": format_date_slash(date_str),
+                    "pct_change": change_pct_palm,
+                    "trend": "Alta" if change_pct_palm > 0 else ("Baixa" if change_pct_palm < 0 else "Estável")
+                }
+    except Exception as e:
+        print(f"Error fetching palm oil automatically: {e}")
+        
+    if palm_auto:
+        data["malaysia_palm"] = palm_auto
+    else:
+        palm = manual_data.get("malaysia_palm", {})
+        change_pct_palm = 0.0
+        change_raw = palm.get("change", "")
+        try:
+            clean_change = change_raw.replace('%', '').replace('no dia', '').strip().replace(',', '.')
+            change_pct_palm = float(clean_change)
+        except:
+            pass
+            
+        data["malaysia_palm"] = {
+            "symbol": "Bursa Malaysia",
+            "price_str": palm.get("value", "N/D"),
+            "date": format_date_slash(palm.get("as_of", "")),
+            "pct_change": change_pct_palm,
+            "trend": "Alta" if change_pct_palm > 0 else ("Baixa" if change_pct_palm < 0 else "Estável")
+        }
     return data
 
 def get_fallback_quote(key):
@@ -377,40 +456,41 @@ def gerar_pdf_diario(dest_path=None):
     
     # Populate quotes in grid
     items_to_display = [
-        ("Óleo de Soja CBOT", "soja_oleo", "cents/lb", "ZL=F", "Alta Forte", "Driver central da rentabilidade e do piso de preço."),
-        ("Soja Grão CBOT", "soja_grao", "cents/bu", "ZS=F", "Alta", "Sustenta custo do esmagamento global."),
-        ("Soja B3 (Física Calc.)", "soja_b3", "R$/sc 60kg", "SJC (Calc)", "Alta", "Preço de paridade da saca física no mercado interno."),
-        ("Dólar Comercial", "dolar", "R$/USD", "USDBRL=X", "Volátil", "Define repasse industrial e margem de esmagadores."),
-        ("Petróleo WTI (Nymex)", "petroleo_wti", "USD/barril", "CL=F", "Alta", "Piso de energia sustentando biodiesel nos EUA."),
-        ("Petróleo Brent (ICE)", "petroleo_brent", "USD/barril", "BZ=F", "Alta", "Seta custos globais de frete e refino.")
+        ("CBOT Óleo de Soja (ZL)", "soja_oleo", "ZL=F", "Driver central da rentabilidade global do óleo."),
+        ("Cepea Óleo de Soja SP", "cepea_sp", "Cepea (SP)", "Referência física para o mercado doméstico brasileiro."),
+        ("Argentina FOB (Rosario)", "argentina_fob", "Rosario (BCR)", "Principal porto de exportação do complexo soja global."),
+        ("Malásia Palma (Bursa)", "malaysia_palm", "Bursa Malaysia", "Principal óleo concorrente e benchmark de palma."),
+        ("Dólar Comercial", "dolar", "USDBRL=X", "Define competitividade cambial e repasse industrial."),
+        ("Petróleo Brent (ICE)", "petroleo_brent", "BZ=F", "Seta custos globais de frete, refino e biodiesel.")
     ]
     
-    for label, key, unit, ticker_symbol, trend, reading in items_to_display:
+    for label, key, ticker_symbol, reading in items_to_display:
         q = quotes.get(key)
         if q:
-            price_val = q["price"]
+            price_str = q.get("price_str")
+            if not price_str:
+                price_val = q["price"]
+                # Format price
+                if key == "dolar":
+                    price_str = f"R$ {price_val:.4f}"
+                elif key == "soja_oleo":
+                    price_str = f"{price_val:.2f} ¢/lb<br/>(USD {q['usd_ton']:.1f}/t)"
+                else:
+                    price_str = f"USD {price_val:.2f}"
+            
             change_pct = q["pct_change"]
-            
-            # Format price
-            if key == "dolar":
-                price_str = f"R$ {price_val:.4f}"
-            elif key == "soja_b3":
-                price_str = f"R$ {price_val:.2f} /sc"
-            elif key == "soja_oleo":
-                price_str = f"{price_val:.2f} ¢/lb\n(USD {q['usd_ton']:.1f}/t)"
-            elif key == "soja_grao":
-                price_str = f"{price_val:.2f} ¢/bu"
-            else:
-                price_str = f"USD {price_val:.2f}"
-                
-            # Format variation
-            sign = "+" if change_pct >= 0 else ""
-            color_text = GREEN_UP if change_pct >= 0 else RED_DOWN
-            arrow = "▲" if change_pct >= 0 else "▼"
-            var_paragraph = Paragraph(f"<font color='{color_text}'><b>{arrow} {sign}{change_pct:.2f}%</b></font>", table_cell_center)
-            
-            dynamic_trend = q.get("trend", trend)
             date_str = q.get("date", "")
+            
+            # Format variation
+            if change_pct == 0.0 and (key == "cepea_sp" or key == "argentina_fob"):
+                var_paragraph = Paragraph("<b>Estável</b>", table_cell_center)
+            else:
+                sign = "+" if change_pct >= 0 else ""
+                color_text = GREEN_UP if change_pct >= 0 else RED_DOWN
+                arrow = "▲" if change_pct >= 0 else "▼"
+                var_paragraph = Paragraph(f"<font color='{color_text}'><b>{arrow} {sign}{change_pct:.2f}%</b></font>", table_cell_center)
+            
+            dynamic_trend = q.get("trend", "Estável")
             ticker_display = f"{ticker_symbol}<br/><font size='5.5' color='#666'>Ref: {date_str}</font>" if date_str else ticker_symbol
             
             grid_rows.append([
