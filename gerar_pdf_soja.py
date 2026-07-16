@@ -334,9 +334,18 @@ def gerar_pdf_diario(dest_path=None):
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=18,
+        fontSize=15,
         textColor=LIGHT_TEXT,
-        spaceAfter=2
+        spaceAfter=1
+    )
+    
+    header_left_subtitle_style = ParagraphStyle(
+        'HeaderLeftSub',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=12,
+        textColor=colors.HexColor("#d8f3dc"),
+        spaceBefore=2
     )
     
     subtitle_style = ParagraphStyle(
@@ -415,12 +424,12 @@ def gerar_pdf_diario(dest_path=None):
     now_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
     header_data = [
         [
-            Paragraph("AGROFOODS COMERCIAL", title_style),
-            Paragraph(f"<b>DATA-BASE:</b> {now_br.strftime('%d/%m/%Y')} | <b>HORA:</b> {now_br.strftime('%H:%M')}", subtitle_style)
+            Paragraph("Agrofoods · Inteligência de Mercado", title_style),
+            Paragraph(f"<b>DATA-BASE:</b> {now_br.strftime('%d/%m/%Y')}", subtitle_style)
         ],
         [
-            Paragraph("DIÁRIO DE MERCADO | SOJA, ÓLEOS & ENERGIA", subtitle_style),
-            Paragraph("<b>INFORME EXECUTIVO TIME DE VENDAS</b>", subtitle_style)
+            Paragraph("Óleo de Soja Global & Energia", header_left_subtitle_style),
+            Paragraph("<b>RELATÓRIO DIÁRIO</b>", subtitle_style)
         ]
     ]
     
@@ -516,8 +525,8 @@ def gerar_pdf_diario(dest_path=None):
     story.append(grid_table)
     story.append(Spacer(1, 3))
     
-    # 3. TAKEAWAYS ESTRATÉGICOS & ANÁLISE DE MERCADO
-    story.append(Paragraph("TAKEAWAYS ESTRATÉGICOS (ÓLEO DE SOJA & DIRETRIZ COMERCIAL)", section_title_style))
+    # 3. DESTAQUES ESTRATÉGICOS
+    story.append(Paragraph("DESTAQUES ESTRATÉGICOS", section_title_style))
     
     # Dynamically generate takeaways based on CBOT Soybean Oil status
     trend_oleo = quotes.get("soja_oleo", {}).get("trend", "Alta")
@@ -526,7 +535,7 @@ def gerar_pdf_diario(dest_path=None):
         takeaway_points = [
             "<b>Ativo Energético:</b> O óleo de soja continua operando descolado da dinâmica alimentar tradicional, respondendo diretamente ao piso dos combustíveis renováveis (biodiesel no Brasil e renewable diesel nos EUA).",
             "<b>Esmagamento e Demanda:</b> A forte demanda doméstica para o mandato B15 a B16 no Brasil limita a disponibilidade de óleo para exportação e mantém os prêmios portuários nacionais extremamente firmes.",
-            "<b>Câmbio Protetor:</b> A volatilidade cambial (dólar operando no range R$ 5,00 - R$ 5,10) atua como colchão para os preços físicos no porto, atenuando flutuações intradiárias da CBOT.",
+            "<b>Câmbio Protetor:</b> A volatilidade cambial atua como colchão para os preços físicos no porto, atenuando flutuações intradiárias da CBOT.",
             "<b>Narrativa de Vendas B2B:</b> O time comercial não deve vender o balde baseado apenas em preço por quilo. O foco deve ser o <b>custo por fritura produzida</b>, rendimento e estabilidade do produto em alta temperatura."
         ]
     else:
@@ -534,7 +543,7 @@ def gerar_pdf_diario(dest_path=None):
             "<b>Pressão de Safra:</b> O ritmo avançado da colheita sul-americana e a perspectiva de grande área plantada de soja nos EUA trazem pressão técnica para os grãos na bolsa de Chicago.",
             "<b>Arbitragem de Importação:</b> O esmagamento acelerado nos EUA gera abundância local de óleo vegetal, reduzindo temporariamente os prêmios de exportação na América do Norte.",
             "<b>Janela de Oportunidade:</b> Correções pontuais na CBOT e no dólar devem ser aproveitadas para <b>reforçar estoques táticos</b> de óleo de soja bruto refinado, garantindo posições antes de novos gatilhos logísticos.",
-            "<b>Defesa de Mix no Campo:</b> Diante da pressão de preço das commodities, acelerar a venda do mix de **Margarinas Especiais** (margem de 20,28%) para compensar a compressão temporária de margem em óleos puros."
+            "<b>Defesa de Mix no Campo:</b> Diante da pressão de preço das commodities, acelerar a venda do mix de <b>Margarinas Especiais (margem de 20,28%)</b> para compensar a compressão temporária de margem em óleos puros."
         ]
         
     takeaway_story = []
@@ -545,8 +554,8 @@ def gerar_pdf_diario(dest_path=None):
     story.append(KeepTogether(takeaway_story))
     story.append(Spacer(1, 5))
     
-    # 4. CENÁRIOS PROJETADOS — PRÓXIMOS 15 A 30 DIAS
-    story.append(Paragraph("CENÁRIOS PROJETADOS & AÇÕES SUGERIDAS", section_title_style))
+    # 4. CENÁRIOS & PROJEÇÕES (PRÓXIMOS 15-30 DIAS)
+    story.append(Paragraph("CENÁRIOS & PROJEÇÕES (PRÓXIMOS 15-30 DIAS)", section_title_style))
     
     scenarios_header = [
         Paragraph("Cenário", table_header_style),
@@ -558,17 +567,17 @@ def gerar_pdf_diario(dest_path=None):
     scenarios_rows = [
         scenarios_header,
         [
-            Paragraph("<b>Cenário Base (Firme)</b><br/>Preços laterais-altistas, óleo CBOT no canal de 73-78 ¢/lb.", table_cell_style),
+            Paragraph("<b>Cenário Base (Firme)</b><br/>ZL no canal de 73-78 ¢/lb.", table_cell_style),
             Paragraph("<b>55%</b>", table_cell_center),
             Paragraph("Defender margens contratuais, evitar posições curtas de estoque e focar no mix de valor agregado (margarinas especiais/ Sina Cheff).", table_cell_style)
         ],
         [
-            Paragraph("<b>Cenário Altista (Pressão)</b><br/>Quebras climáticas nos EUA ou petróleo Brent acima de US$ 88.", table_cell_style),
+            Paragraph("<b>Cenário Altista (Pressão)</b><br/>Quebras nos EUA ou Brent acima de US$ 88.", table_cell_style),
             Paragraph("<b>30%</b>", table_cell_center),
             Paragraph("Disparar gatilhos rápidos de repasse de preço semanais e reduzir o prazo de cotações comerciais para no máximo 3 dias.", table_cell_style)
         ],
         [
-            Paragraph("<b>Cenário de Correção</b><br/>Clima ideal nos EUA e aumento de esmagamento no Brasil.", table_cell_style),
+            Paragraph("<b>Cenário de Correção</b><br/>Clima ideal nos EUA e esmagamento acelerado.", table_cell_style),
             Paragraph("<b>15%</b>", table_cell_center),
             Paragraph("Aproveitar realizações técnicas em Chicago para compra de matéria-prima e fechamento de contratos táticos com distribuidores.", table_cell_style)
         ]
@@ -587,35 +596,59 @@ def gerar_pdf_diario(dest_path=None):
     story.append(scenarios_table)
     story.append(Spacer(1, 3))
     
-    # 5. NOTÍCIAS DE IMPACTO & MONITORAMENTO
-    story.append(Paragraph("RADAR DE NOTÍCIAS DO SETOR & DIREÇÃO DO CAMPO", section_title_style))
+    # 5. RADAR DE NOTÍCIAS DO SETOR
+    story.append(Paragraph("RADAR DE NOTÍCIAS DO SETOR", section_title_style))
     
-    brent_price = quotes.get("petroleo_brent", {}).get("price", 82.0)
-    usd_price = quotes.get("dolar", {}).get("price", 5.00)
+    # Load manual.json data
+    manual_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'manual.json')
+    manual_data = {}
+    if os.path.exists(manual_path):
+        try:
+            with open(manual_path, 'r', encoding='utf-8') as f:
+                manual_data = json.load(f)
+        except Exception as e:
+            print(f"Error loading manual.json: {e}")
+            
+    headline = manual_data.get("headline_dia", {})
+    headline_title = headline.get("title", "N/D")
+    headline_summary = headline.get("summary", "N/D")
     
-    # Try fetching dynamic agricultural news, fallback to templates if empty
-    news_items = fetch_noticias_agricolas()
-    if not news_items:
-        news_items = [
-            ("Mandato de Biodiesel & Petróleo: Sustentação de Demanda por Óleo de Soja", f"Com o petróleo Brent cotado a USD {brent_price:.1f}/barril, a viabilidade do biodiesel se mantém elevada. O óleo de soja, principal insumo nacional, ganha suporte direto do mercado internacional de energia."),
-            (f"Câmbio & Competitividade: Dólar a R$ {usd_price:.2f} atua como Amortecedor Cambial", "A moeda americana valorizada compensa flutuações intradiárias da soja em grão na CBOT, mantendo firmes as margens de esmagamento e os preços da saca no mercado físico interno."),
-            ("Arbitragem Global de Óleos: Custos de frete e refino doméstico de soja", "A combinação de dólar firme e frete logístico pressionado eleva a competitividade do esmagamento local de soja, limitando o espaço para óleos concorrentes importados no refino.")
+    news_box_content = [
+        Paragraph(f"<b>Destaque do Dia: {headline_title}</b>", bold_body_style),
+        Spacer(1, 2),
+        Paragraph(headline_summary, body_style)
+    ]
+    
+    # 2-column table to simulate border-left: 4px solid #d4a373
+    news_table_data = [
+        [
+            "",  # Left gold border column
+            news_box_content
         ]
-        
-    news_story = []
-    for title, desc in news_items:
-        news_story.append(Paragraph(f"<b>{title}</b>", bold_body_style))
-        news_story.append(Paragraph(desc, body_style))
-        news_story.append(Spacer(1, 4))
-        
-    story.append(KeepTogether(news_story))
+    ]
+    
+    news_table = Table(news_table_data, colWidths=[4, 519])
+    news_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor("#d4a373")), # Gold border
+        ('BACKGROUND', (1,0), (1,0), colors.HexColor("#f8f9fa")), # Light grey background
+        ('PADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (1,0), (1,0), 6),
+        ('BOTTOMPADDING', (1,0), (1,0), 6),
+        ('LEFTPADDING', (1,0), (1,0), 10),
+        ('RIGHTPADDING', (1,0), (1,0), 10),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    
+    story.append(news_table)
+    story.append(Spacer(1, 4))
     
     # 6. ACTION TODAY PANEL
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 2))
     action_box_content = [
-        Paragraph("<b>ACTION TODAY | DIRETRIZ DE CAMPO PARA OS VENDEDORES:</b>", bold_body_style),
-        Paragraph("1. Apresentar aos clientes de fritura (redes e operadores) o rendimento em ciclos de fritura em vez de preço por quilo.", body_style),
-        Paragraph("2. Priorizar a venda cruzada de **Margarinas Especiais Sina Cheff (margem de 20,28%)** em padarias e confeitarias de alta rotação.", body_style),
+        Paragraph("<b>ACTION TODAY | DIRETRIZ DE CAMPO PARA VENDAS:</b>", bold_body_style),
+        Spacer(1, 2),
+        Paragraph("1. Apresentar aos clientes de fritura o rendimento em ciclos de fritura em vez de preço por quilo.", body_style),
+        Paragraph("2. Priorizar a venda cruzada de <b>Margarinas Especiais Sina Cheff (margem de 20,28%)</b> em padarias de alta rotação.", body_style),
         Paragraph("3. Monitorar: óleo CBOT sustentado acima de 75 c/lb e taxa cambial USD/BRL acima de R$ 5,05 como gatilho de reajuste automático.", body_style)
     ]
     
@@ -625,8 +658,8 @@ def gerar_pdf_diario(dest_path=None):
         ('BOX', (0,0), (0,0), 1, LEAF_GREEN),
         ('PADDING', (0,0), (0,0), 8),
         ('VALIGN', (0,0), (0,0), 'TOP'),
-        ('TOPPADDING', (0,0), (0,0), 4),
-        ('BOTTOMPADDING', (0,0), (0,0), 4),
+        ('TOPPADDING', (0,0), (0,0), 6),
+        ('BOTTOMPADDING', (0,0), (0,0), 6),
     ]))
     
     story.append(action_table)
