@@ -334,10 +334,20 @@ def enviar_email_diario(pdf_path, config):
         if admin_email:
             msg['Cc'] = admin_email
         msg['Subject'] = assunto
-        
         msg.attach(MIMEText(html_corpo, 'html', 'utf-8'))
-        # PDF attachment removed as requested by user (body only)
         
+        # PDF attachment restored per user request
+        if os.path.exists(pdf_path):
+            with open(pdf_path, 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(pdf_path)}"')
+                msg.attach(part)
+        else:
+            print(f"Arquivo PDF não encontrado para anexar: {pdf_path}")
+            return False
+            
         server = smtplib.SMTP(config.get('smtp_server', 'smtp.gmail.com'), config.get('smtp_port', 587))
         if config.get('use_tls', True):
             server.starttls()
