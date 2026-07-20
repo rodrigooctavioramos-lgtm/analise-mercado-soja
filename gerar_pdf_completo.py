@@ -27,6 +27,9 @@ def gerar_pdf_completo(dest_path=None):
     if dest_path is None:
         dest_path = '/Users/rodrigoramos/Downloads/AGROFOODS_DAILY_MARKET_INTELLIGENCE_COMPLETO.pdf'
         
+    # Ensure destination directory exists (critical for GitHub Actions runner)
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        
     doc = SimpleDocTemplate(
         dest_path,
         pagesize=A4,
