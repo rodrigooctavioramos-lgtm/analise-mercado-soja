@@ -13,7 +13,8 @@ from email import encoders
 # Add directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from gerar_pdf_soja import gerar_pdf_diario, fetch_quotes
+from gerar_pdf_soja import fetch_quotes
+from gerar_pdf_completo import gerar_pdf_completo
 
 def ler_config_email():
     """Reads email configuration from env vars, local config file or fallback."""
@@ -377,8 +378,8 @@ def executar_agendamento_diario():
     today_str = now_br.strftime('%Y-%m-%d')
     archive_pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dados', 'relatorios', f"diario_soja_{today_str}.pdf")
     
-    # Generate main PDF
-    gerar_pdf_diario(archive_pdf_path)
+    # Generate main PDF (2-page complete format)
+    gerar_pdf_completo(archive_pdf_path)
     
     # Copy to the standard location for email attachment
     standard_pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dados', 'relatorios', 'diario_soja.pdf')
